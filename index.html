@@ -109,14 +109,28 @@
   .sec-head h2{margin:0;font-size:20px;font-weight:700}
   .sec-head p{margin:0;color:var(--faint);font-size:13px}
 
+  /* ---------- game cards: Avardo style, shared by the Popular row and the
+     All Games grid. Slanted parallelogram art window (one uniform 16/11 box,
+     cover-cropped from the top center), an angled offer strip overlapping
+     the bottom of the art, then the game name in bold capitals and a smaller
+     "Currency · Region server" subtitle — all directly on the page
+     background: no card box, border, shadow or dark info panel. ---------- */
+  .gart{display:block;position:relative;aspect-ratio:16/11;clip-path:polygon(9% 0,100% 0,91% 100%,0 100%);background:var(--bg2)}
+  .gart img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:top center}
+  .gart .vbadge{position:absolute;top:7px;right:14px;background:rgba(0,0,0,.82);color:var(--brand);font-size:9.5px;font-weight:900;letter-spacing:.07em;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,202,0,.45)}
+  .gstrip{display:flex;align-items:center;justify-content:center;gap:5px;position:relative;z-index:2;margin:-13px 3px 0;padding:5px 8px;clip-path:polygon(3.5% 0,100% 0,96.5% 100%,0 100%);color:#000;font-size:10.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}
+  .gstrip svg{width:11px;height:11px;fill:#000;flex:none}
+  .gstrip.hot{background:linear-gradient(90deg,#ff8a00,#ffc400)}
+  .gstrip.sell{background:#17d2e8}
+  .gname{display:block;margin-top:9px;font-weight:800;line-height:1.3;text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+  .gsub{display:block;margin-top:3px;color:var(--faint);font-size:11px;line-height:1.35}
+
   /* ---------- popular: horizontal snap-scroll row ---------- */
   .pop-row{display:flex;gap:12px;overflow-x:auto;padding:10px 2px 8px;scroll-snap-type:x mandatory;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
-  .pop-card{flex:0 0 auto;width:132px;scroll-snap-align:start;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;padding:0;color:var(--ink);text-align:center;box-shadow:var(--shadow)}
-  /* uniform art box (like avardoofficial.in): one 16/11 box for every card,
-     picture cover-cropped from the top center to fill that exact box */
-  .pop-card .pop-art{display:block;position:relative;width:100%;aspect-ratio:16/11;overflow:hidden;background:var(--card2)}
-  .pop-card .pop-art img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:top center}
-  .pop-card .pn{display:block;padding:8px 6px 10px;font-size:11.5px;font-weight:700;line-height:1.3;text-transform:uppercase;letter-spacing:.02em}
+  .pop-card{flex:0 0 auto;width:140px;scroll-snap-align:start;background:transparent;border:none;padding:0;color:var(--ink);text-align:center;box-shadow:none;position:relative}
+  .pop-card .gname{font-size:11.5px}
+  .pop-card .gsub{font-size:10px}
+  .pop-card .gstrip{font-size:9.5px;padding:4px 6px;margin-top:-11px}
   .pop-card:active{transform:scale(.97)}
 
   /* ---------- trending deals ---------- */
@@ -139,24 +153,14 @@
   .cat{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:9px 15px;font-weight:700;font-size:13.5px;white-space:nowrap;min-height:40px}
   .cat.on{background:var(--gold);color:#000;border-color:transparent}
 
-  /* ---------- all games grid: 3 across on phones, wide on desktop ---------- */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:10px}
-  .game{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:center;padding:0;color:var(--ink);width:100%;position:relative;box-shadow:var(--shadow)}
+  /* ---------- all games grid: 3 across on phones, wide on desktop ----------
+     Cards use the shared Avardo-style anatomy above (.gart / .gstrip /
+     .gname / .gsub): slanted art + angled offer strip + name + server
+     subtitle on the page background, transparent card, no box or panel. */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:20px 14px;margin-top:10px}
+  .game{background:transparent;border:none;text-align:center;padding:0;color:var(--ink);width:100%;position:relative;box-shadow:none}
   .game:active{transform:scale(.98)}
-  /* trending strip overlays the top of the art box so it never pushes the
-     art down — every card's art starts at the same top edge */
-  .hottag{position:absolute;top:0;left:0;right:0;z-index:2;display:block;background:linear-gradient(90deg,#ff7a00,#ffea00);color:#000;font-size:10px;font-weight:800;text-align:center;padding:4px;letter-spacing:.08em}
-  /* uniform art box (like avardoofficial.in): one 16/11 box for every card,
-     picture cover-cropped from the top center to fill that exact box —
-     no letterboxing, no squashing, no art taller or shorter than another's */
-  .game .cover{display:block;position:relative;width:100%;aspect-ratio:16/11;overflow:hidden;background:var(--card2)}
-  .game .cover img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:top center}
-  .vbadge{position:absolute;left:7px;bottom:7px;background:rgba(0,0,0,.82);color:var(--brand);font-size:9.5px;font-weight:900;letter-spacing:.07em;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,202,0,.45)}
-  .game .meta{display:block;padding:9px 7px 11px}
-  .game h3{margin:0;font-size:12.5px;line-height:1.3;text-transform:uppercase;letter-spacing:.02em;min-height:2.6em}
-  .game .cur{color:var(--faint);font-size:11px;margin-top:3px}
-  .game .from{font-size:11px;color:var(--muted);margin-top:6px}
-  .game .from b{color:var(--brand);font-size:13.5px}
+  .game .gname{font-size:13px}
   .empty{display:none;text-align:center;color:var(--muted);padding:34px 10px;border:1px dashed var(--line);border-radius:var(--radius)}
 
   /* ---------- steps / faq ---------- */
@@ -341,15 +345,14 @@
     .logo-sub{display:none}
     .logo-name{font-size:18px}
     .banner{min-height:158px}
-    .pop-card{width:112px}
+    .pop-card{width:124px}
     .deals{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 8px;margin:6px -2px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
     .deals::-webkit-scrollbar{display:none}
     .deal{flex:0 0 84%;scroll-snap-align:start}
-    .grid{grid-template-columns:repeat(3,1fr);gap:10px}
-    .game h3{font-size:10.5px}
-    .game .cur{display:none}
-    .game .from{font-size:10px}
-    .game .from b{font-size:12px}
+    .grid{grid-template-columns:repeat(3,1fr);gap:16px 10px}
+    .game .gname{font-size:10.5px}
+    .game .gsub{font-size:9.5px}
+    .game .gstrip{font-size:9px;padding:4px 5px;margin-top:-10px}
     .steps{grid-template-columns:1fr}
     .packs{grid-template-columns:repeat(2,1fr)}
     .fields{grid-template-columns:1fr}
@@ -1567,11 +1570,35 @@ function renderTicker(){
   wt.style.animationDuration = marqueeState.welcomeSecs + "s";
 }
 
+/* ---------------- Game cards (Avardo style, shared by Popular row + grid) ----------------
+   Slanted art window + angled offer strip overlapping its bottom edge,
+   then the full game name and a "Currency · Region server" subtitle below
+   the art, on the page background. Trending games carry the yellow HOT
+   strip; the rest carry the cyan MOST SELLING strip. */
+var BOLT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4.5 13.5H11L9.8 22 19 9.8h-6.5L13 2z"/></svg>';
+function serverSub(g){
+  var region = "";
+  var i = g.name.indexOf("—");
+  if(i > -1) region = g.name.slice(i + 1).trim();
+  else if(g.badge) region = g.badge.charAt(0) + g.badge.slice(1).toLowerCase();
+  return g.cur + (region ? " · " + region + " server" : "");
+}
+function cardHTML(g){
+  return '<span class="gart"><img src="'+g.img+'" alt="'+esc(g.name)+' game artwork" loading="lazy">'
+    + (g.badge?'<span class="vbadge">'+esc(g.badge)+'</span>':'')
+    + '</span>'
+    + (g.hot
+      ? '<span class="gstrip hot">'+BOLT_SVG+'Hot</span>'
+      : '<span class="gstrip sell">'+BOLT_SVG+'Most Selling</span>')
+    + '<span class="gname">'+esc(g.name)+'</span>'
+    + '<span class="gsub">'+esc(serverSub(g))+'</span>';
+}
+
 /* ---------------- Popular row (horizontal snap-scroll) ---------------- */
 function renderPop(){
   var pop = GAMES.filter(function(g){ return g.hot; }).concat(GAMES.filter(function(g){ return !g.hot; })).slice(0,8);
   $("popRow").innerHTML = pop.map(function(g){
-    return '<button class="pop-card" type="button" data-game="'+g.id+'"><span class="pop-art"><img src="'+g.img+'" alt="'+esc(g.name)+' game artwork" loading="lazy"></span><span class="pn">'+esc(g.short)+'</span></button>';
+    return '<button class="pop-card" type="button" data-game="'+g.id+'">'+cardHTML(g)+'</button>';
   }).join("");
 }
 renderPop();
@@ -1607,13 +1634,7 @@ function renderGrid(){
     return okCat && okQ;
   });
   $("grid").innerHTML = list.map(function(g){
-    var min = g.packs.reduce(function(m,p){ return p.pr<m?p.pr:m; }, 1e12);
-    return '<button class="game" type="button" data-game="'+g.id+'">'
-      + (g.hot?'<span class="hottag">TRENDING</span>':'')
-      + '<span class="cover"><img src="'+g.img+'" alt="'+esc(g.name)+' game artwork" loading="lazy">'
-      + (g.badge?'<span class="vbadge">'+g.badge+'</span>':'') + '</span>'
-      + '<span class="meta"><h3>'+esc(g.name)+'</h3><div class="cur">'+esc(g.cur)+' · ID top-up</div>'
-      + '<div class="from">From <b>'+inr(min)+'</b></div></span></button>';
+    return '<button class="game" type="button" data-game="'+g.id+'">'+cardHTML(g)+'</button>';
   }).join("");
   $("emptyState").style.display = list.length? "none":"block";
 }
@@ -2063,8 +2084,11 @@ function openAuth(){
 }
 function closeAuth(){ $("auth").classList.remove("open"); if(!$("panel").classList.contains("open") && !$("setup").classList.contains("open") && !$("quick").classList.contains("open")) document.body.style.overflow=""; }
 $("authBack").addEventListener("click", closeAuth);
-$("loginBtn").addEventListener("click", openAuth);
-$("navAccount").addEventListener("click", function(e){ e.preventDefault(); openAuth(); });
+/* One auth control, identical in both states: signed out it reads "Login"
+   and opens the login page; signed in it reads "Logout" (same place, size
+   and style) and signs the user out. */
+$("loginBtn").addEventListener("click", function(){ if(currentUser) signOut(); else openAuth(); });
+$("navAccount").addEventListener("click", function(e){ e.preventDefault(); if(currentUser) signOut(); else openAuth(); });
 $("authShopBtn").addEventListener("click", closeAuth);
 
 function setAuthMode(mode){
@@ -2096,16 +2120,20 @@ function renderAuth(){
   var loggedIn = !!currentUser;
   $("authLoggedOut").style.display = loggedIn ? "none" : "block";
   $("authLoggedIn").style.display = loggedIn ? "block" : "none";
-  /* header button */
-  $("loginLabel").textContent = loggedIn ? currentUser.name.split(" ")[0] : "Login";
+  /* header button — same yellow control in both states: "Login" when
+     signed out, "Logout" when signed in; the avatar stays as the
+     signed-in identity cue, exactly where the person icon sits */
+  $("loginLabel").textContent = loggedIn ? "Logout" : "Login";
   $("loginLabel").style.display = "";
   $("loginIcon").style.display = loggedIn ? "none" : "";
+  $("loginBtn").setAttribute("aria-label", loggedIn ? "Logout of your account" : "Login to your account");
   var av = $("loginAvatar");
   if(loggedIn){
     av.style.display = "grid";
     av.innerHTML = currentUser.picture ? '<img src="'+esc(currentUser.picture)+'" alt="">' : esc(initials(currentUser.name));
   } else { av.style.display = "none"; av.innerHTML = ""; }
-  $("navAccountLabel").textContent = loggedIn ? "Account" : "Login";
+  $("navAccountLabel").textContent = loggedIn ? "Logout" : "Login";
+  $("navAccount").setAttribute("aria-label", loggedIn ? "Logout of your account" : "Login to your account");
   /* Admin controls: ONLY the admin Google account sees Seller setup */
   var admin = isAdmin();
   $("setupBtn").style.display = admin ? "" : "none";
@@ -2147,7 +2175,7 @@ $("authForm").addEventListener("submit", function(e){
     btn.textContent = authMode==="signup" ? "Create account" : "Login";
   });
 });
-$("logoutBtn").addEventListener("click", function(){
+function signOut(){
   apiToken = null;
   appliedCoupon = null;
   walletState = { balance:null, ledger:[] };
@@ -2155,7 +2183,8 @@ $("logoutBtn").addEventListener("click", function(){
   setAuthMode("login");
   loadStoreData();
   toast("Signed out.");
-});
+}
+$("logoutBtn").addEventListener("click", signOut);
 
 /* Google sign-in — the backend flow: the button sends the browser to the
    backend's /api/auth/google; Google redirects to the backend callback,
