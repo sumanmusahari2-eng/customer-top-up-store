@@ -72,10 +72,14 @@
   .banner p{margin:0 0 12px;color:#e3e3e3;font-size:13.5px;line-height:1.5;max-width:480px}
   .banner .cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#000;border:none;border-radius:10px;padding:11px 18px;font-weight:800;font-size:14.5px;min-height:44px}
   .banner .cta:active{transform:scale(.97)}
-  .trustrow{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .trustrow::-webkit-scrollbar{display:none}
-  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;white-space:nowrap;color:var(--ink)}
+  .trustrow{overflow:hidden;padding:12px 2px 2px}
+  .trust-track{display:inline-flex;gap:8px;animation:trustmove 24s linear infinite;will-change:transform}
+  @keyframes trustmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .trustrow:hover .trust-track{animation-play-state:paused}
+  @media (prefers-reduced-motion: reduce){.trust-track{animation:none}}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;white-space:nowrap;color:var(--ink);flex:none}
   .chip svg{width:14px;height:14px;fill:var(--brand);flex:none}
+  .chip img{width:14px;height:14px;object-fit:cover;border-radius:3px;flex:none}
 
   /* ---------- welcome marquee bar (below banner, like the reference) ---------- */
   .welcome-marquee{background:var(--gold);color:#000;overflow:hidden;white-space:nowrap;border-radius:10px;margin-top:12px}
@@ -428,12 +432,7 @@
     </button>
   </div>
 
-  <div class="trustrow">
-    <span class="chip"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.8 22 19 9.8h-6.5L13 2z"/></svg> Instant delivery</span>
-    <span class="chip"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3zm-1.5 14.5-3-3 1.4-1.4 1.6 1.6 4.1-4.1 1.4 1.4-5.5 5.5z"/></svg> ID-only top-up — safe</span>
-    <span class="chip"><svg viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6zm2 0v12h14V6H5zm2 3h6v3H7z"/></svg> UPI · PhonePe · GPay · Paytm</span>
-    <span class="chip"><svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg> Support 7 days a week</span>
-  </div>
+  <div class="trustrow" id="trustRow"></div>
 
   <div class="sec-head" id="popularHead"><h2>🔥 Popular Games</h2><p>Swipe — tap to top up</p></div>
   <div class="pop-row" id="popRow"></div>
@@ -696,6 +695,13 @@
         </div>
         <div style="height:14px"></div>
         <button class="buy" id="applyMarquee" type="button">Apply moving banners</button>
+      </div>
+      <div class="stepbox">
+        <h3>Trust chips — moving strip</h3>
+        <p class="hint">The scrolling chips under the quick tiles (Instant delivery, ID-only top-up, payments, support). Edit the text, or add a small image to any chip — the image shows at the same 14px size as the icon, so the chips stay exactly the same height. Changes apply live and save with the store data.</p>
+        <div id="trustEditor"></div>
+        <div style="height:6px"></div>
+        <button class="buy" id="applyTrust" type="button">Apply trust chips</button>
       </div>
     </section>
 
@@ -1554,6 +1560,22 @@ function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show"
 function waLink(text){ return "https://wa.me/" + seller.wa + "?text=" + encodeURIComponent(text); }
 
 /* ---------------- Ticker (welcome marquee, follows store name) ---------------- */
+var TRUST = [
+  { t:"Instant delivery", icon:"M13 2 4.5 13.5H11L9.8 22 19 9.8h-6.5L13 2z", img:"" },
+  { t:"ID-only top-up \u2014 safe", icon:"M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3zm-1.5 14.5-3-3 1.4-1.4 1.6 1.6 4.1-4.1 1.4 1.4-5.5 5.5z", img:"" },
+  { t:"UPI \u00b7 PhonePe \u00b7 GPay \u00b7 Paytm", icon:"M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6zm2 0v12h14V6H5zm2 3h6v3H7z", img:"" },
+  { t:"Support 7 days a week", icon:"M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z", img:"" }
+];
+function trustChipHTML(c){
+  var icon = c.img ? '<img src="' + c.img + '" alt="">' : '<svg viewBox="0 0 24 24"><path d="' + (c.icon || "") + '"/></svg>';
+  return '<span class="chip">' + icon + ' ' + esc(c.t) + '</span>';
+}
+function renderTrust(){
+  var el = $("trustRow"); if(!el) return;
+  var once = TRUST.map(trustChipHTML).join("");
+  el.innerHTML = '<div class="trust-track">' + once + once + '</div>';
+}
+renderTrust();
 function renderTicker(){
   var items = (marqueeState.tickerItems && marqueeState.tickerItems.length) ? marqueeState.tickerItems : ["WELCOME TO {STORE}"];
   var html="";
@@ -2249,7 +2271,7 @@ function adminGuard(){
   return true;
 }
 function refreshStorefront(){
-  renderCats(); renderGrid(); renderPop(); renderDeals(); renderTicker();
+  renderCats(); renderGrid(); renderPop(); renderDeals(); renderTicker(); renderTrust();
 }
 
 /* ---- Backend store data: once the admin saves the catalogue to the
@@ -2273,6 +2295,7 @@ function storeSnapshot(){
     banner: { img:bannerState.img, title:bannerState.title, hl:bannerState.hl, sub:bannerState.sub, cta:bannerState.cta },
     marquee: { tickerItems:marqueeState.tickerItems, tickerSecs:marqueeState.tickerSecs, welcomeText:marqueeState.welcomeText, welcomeSecs:marqueeState.welcomeSecs },
     seo: { title:seoState.title, desc:seoState.desc },
+    trust: TRUST,
     games: gamesForBackend(),
     cats: CATS,
     faqs: FAQS,
@@ -2310,6 +2333,7 @@ function applyStoreData(d){
     marqueeState.tickerSecs = clampSecs(d.marquee.tickerSecs, marqueeState.tickerSecs);
     marqueeState.welcomeSecs = clampSecs(d.marquee.welcomeSecs, marqueeState.welcomeSecs);
   }
+  if(Array.isArray(d.trust) && d.trust.length) TRUST = d.trust.map(function(c){ return { t:String(c.t || ""), icon:String(c.icon || ""), img:String(c.img || "") }; }).filter(function(c){ return c.t; });
   if(Array.isArray(d.cats) && d.cats.length) CATS = d.cats;
   if(Array.isArray(d.faqs)) FAQS = d.faqs;
   if(Array.isArray(d.deals)) DEALS = d.deals;
@@ -2432,6 +2456,7 @@ function openSetup(){
   $("mqWelcomeText").value = marqueeState.welcomeText;
   $("mqWelcomeSecs").value = marqueeState.welcomeSecs;
   $("mqWelcomePreset").value = mqPresetName(marqueeState.welcomeSecs, "welcome");
+  renderTrustEditor();
   $("seoName").value = seller.name;
   $("seoTitle").value = seoState.title || (seller.name + " — Game Top-Ups, Delivered Fast");
   $("seoDesc").value = seoState.desc || $("metaDesc").getAttribute("content");
@@ -2510,6 +2535,42 @@ $("bnFile").addEventListener("change", function(){
 });
 $("bnImg").addEventListener("change", function(){ $("bnPreview").src = this.value; });
 
+
+/* ---- Trust chips editor ---- */
+function renderTrustEditor(){
+  var box = $("trustEditor"); if(!box) return;
+  box.innerHTML = TRUST.map(function(c, i){
+    return '<div class="arow"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      + '<input data-trust-t="' + i + '" type="text" maxlength="60" value="' + esc(c.t) + '" style="flex:1;min-width:140px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px 12px;font-size:14px">'
+      + (c.img ? '<img src="' + c.img + '" style="width:28px;height:28px;object-fit:cover;border-radius:6px" alt="">' : '')
+      + '<button class="sbtn" type="button" data-trust-up="' + i + '">Upload image</button>'
+      + (c.img ? '<button class="sbtn" type="button" data-trust-rm="' + i + '">Remove image</button>' : '')
+      + '</div></div>';
+  }).join("");
+  Array.prototype.forEach.call(box.querySelectorAll("[data-trust-up]"), function(b){
+    b.addEventListener("click", function(){
+      var i = +b.getAttribute("data-trust-up");
+      var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+      inp.addEventListener("change", function(){
+        var file = inp.files && inp.files[0];
+        if(!file) return;
+        processImageFile(file, 64, function(dataUrl){ TRUST[i].img = dataUrl; renderTrustEditor(); renderTrust(); });
+      });
+      inp.click();
+    });
+  });
+  Array.prototype.forEach.call(box.querySelectorAll("[data-trust-rm]"), function(b){
+    b.addEventListener("click", function(){ TRUST[+b.getAttribute("data-trust-rm")].img = ""; renderTrustEditor(); renderTrust(); });
+  });
+}
+$("applyTrust").addEventListener("click", function(){
+  if(!adminGuard()) return;
+  TRUST = TRUST.map(function(c, i){
+    var el = document.querySelector('[data-trust-t="' + i + '"]');
+    return { t: el ? el.value.trim() || c.t : c.t, icon: c.icon || "", img: c.img || "" };
+  });
+  renderTrust(); renderTrustEditor(); saveStoreToBackend(); toast("Trust chips updated.");
+});
 /* ---- Highlights (trending deals) editor ---- */
 function renderDealsEditor(){
   $("dealsEditor").innerHTML = DEALS.map(function(x,i){
