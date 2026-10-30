@@ -2493,10 +2493,10 @@ $("applySetup").addEventListener("click", function(){
 $("applyBanner").addEventListener("click", function(){
   if(!adminGuard()) return;
   bannerState.img = $("bnImg").value;
-  bannerState.title = $("bnTitle").value.trim() || bannerState.title;
+  bannerState.title = $("bnTitle").value.trim();
   bannerState.hl = $("bnHl").value.trim();
-  bannerState.sub = $("bnSub").value.trim() || bannerState.sub;
-  bannerState.cta = $("bnCta").value.trim() || bannerState.cta;
+  bannerState.sub = $("bnSub").value.trim();
+  bannerState.cta = $("bnCta").value.trim();
   renderBanner();
   saveStoreToBackend();
   toast("Banner updated.");
