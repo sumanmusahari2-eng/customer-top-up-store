@@ -2404,6 +2404,17 @@ function saveStoreToBackend(done){
   return true;
 }
 
+/* Banner-only save: sends just the five banner fields to
+   PUT /api/admin/banner, so a banner save is small and fast instead of
+   re-sending the whole multi-MB store snapshot. */
+function saveBannerFast(msg){
+  if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return; }
+  if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return; }
+  toast("Saving banner…");
+  api("/api/admin/banner", { method:"PUT", body:{ img:bannerState.img, title:bannerState.title, hl:bannerState.hl, sub:bannerState.sub, cta:bannerState.cta } }).then(function(){
+    toast(msg || "Banner saved.");
+  }).catch(function(err){ toast("Banner save failed: " + err.message); });
+}
 /* ---- Image upload (banner + game covers) ----
    A picked file is resized on a canvas in the browser and kept as a JPEG
    data URL in the same img field the artwork dropdown uses, so Apply
@@ -2546,7 +2557,7 @@ $("applyBanner").addEventListener("click", function(){
   bannerState.sub = $("bnSub").value.trim();
   bannerState.cta = $("bnCta").value.trim();
   renderBanner();
-  saveStoreToBackend("Banner updated.");
+  saveBannerFast("Banner saved.");
 });
 
 /* ---- Moving banners (ticker + welcome marquee) apply ---- */
@@ -2579,10 +2590,11 @@ $("bnFile").addEventListener("change", function(){
     $("bnImg").innerHTML = imgOptionList(dataUrl);
     $("bnPreview").src = dataUrl;
     renderBanner();
-    saveStoreToBackend("Banner image uploaded and applied.");
+    saveBannerFast("Banner image uploaded and applied.");
   });
 });
-$("bnImg").addEventListener("change", function(){ bannerState.img = this.value; $("bnPreview").src = this.value; renderBanner(); });
+var bannerSaveTimer = null;
+$("bnImg").addEventListener("change", function(){ bannerState.img = this.value; $("bnPreview").src = this.value; renderBanner(); if(bannerSaveTimer) clearTimeout(bannerSaveTimer); bannerSaveTimer = setTimeout(function(){ saveBannerFast("Banner image saved."); }, 1200); });
 
 
 /* ---- Trust chips editor ---- */
