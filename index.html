@@ -2354,11 +2354,12 @@ function loadStoreData(){
   }).catch(function(){ /* backend unreachable — built-in catalogue stays */ }).then(function(){ storeLoadDone = true; });
 }
 function saveStoreToBackend(){
-  if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return; }
-  if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return; }
+  if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return false; }
+  if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return false; }
   api("/api/admin/store", { method:"PUT", body:storeSnapshot() }).then(function(){
     toast("Saved to the backend — live for every visitor.");
   }).catch(function(err){ toast("Backend save failed: " + err.message); });
+  return true;
 }
 
 /* ---- Image upload (banner + game covers) ----
@@ -2447,6 +2448,10 @@ function openSetup(){
     openAuth();
     return;
   }
+  if(!storeLoadDone){
+    toast("Store data is still loading — wait a few seconds, then tap the gear again.");
+    return;
+  }
   $("setName").value = seller.name;
   $("setWa").value = seller.wa;
   $("setNote").value = seller.note;
@@ -2487,9 +2492,7 @@ $("applySetup").addEventListener("click", function(){
   else if($("setWa").value.trim()){ toast("WhatsApp number looks off — use country code + number, digits only."); return; }
   seller.note = $("setNote").value.trim() || seller.note;
   applyBrand();
-  saveStoreToBackend();
-  closeSetup();
-  toast("Store settings updated.");
+  if(saveStoreToBackend()){ closeSetup(); toast("Store settings updated."); }
 });
 
 /* ---- Banner apply ---- */
@@ -2501,8 +2504,7 @@ $("applyBanner").addEventListener("click", function(){
   bannerState.sub = $("bnSub").value.trim();
   bannerState.cta = $("bnCta").value.trim();
   renderBanner();
-  saveStoreToBackend();
-  toast("Banner updated.");
+  if(saveStoreToBackend()) toast("Banner updated.");
 });
 
 /* ---- Moving banners (ticker + welcome marquee) apply ---- */
@@ -2523,8 +2525,7 @@ $("applyMarquee").addEventListener("click", function(){
   marqueeState.welcomeText = wt;
   marqueeState.welcomeSecs = clampSecs($("mqWelcomeSecs").value, marqueeState.welcomeSecs);
   renderTicker();
-  saveStoreToBackend();
-  toast("Moving banners updated.");
+  if(saveStoreToBackend()) toast("Moving banners updated.");
 });
 
 /* ---- Banner image upload ---- */
@@ -2536,8 +2537,7 @@ $("bnFile").addEventListener("change", function(){
     $("bnImg").innerHTML = imgOptionList(dataUrl);
     $("bnPreview").src = dataUrl;
     renderBanner();
-    saveStoreToBackend();
-    toast("Banner image uploaded and applied.");
+    if(saveStoreToBackend()) toast("Banner image uploaded and applied.");
   });
 });
 $("bnImg").addEventListener("change", function(){ $("bnPreview").src = this.value; });
@@ -2576,7 +2576,7 @@ $("applyTrust").addEventListener("click", function(){
     var el = document.querySelector('[data-trust-t="' + i + '"]');
     return { t: el ? el.value.trim() || c.t : c.t, icon: c.icon || "", img: c.img || "" };
   });
-  renderTrust(); renderTrustEditor(); saveStoreToBackend(); toast("Trust chips updated.");
+  renderTrust(); renderTrustEditor(); if(saveStoreToBackend()) toast("Trust chips updated.");
 });
 /* ---- Highlights (trending deals) editor ---- */
 function renderDealsEditor(){
@@ -2601,8 +2601,7 @@ $("applyDeals").addEventListener("click", function(){
     };
   });
   renderDeals();
-  saveStoreToBackend();
-  toast("Highlights updated.");
+  if(saveStoreToBackend()) toast("Highlights updated.");
 });
 
 /* ---- Games & packs editor ---- */
@@ -2661,8 +2660,7 @@ function renderGameEditor(){
       g.img = dataUrl;
       refreshStorefront();
       renderGameEditor();
-      saveStoreToBackend();
-      toast("Cover image uploaded and applied to " + g.name + ".");
+      if(saveStoreToBackend()) toast("Cover image uploaded and applied to " + g.name + ".");
     });
   });
 }
@@ -2679,8 +2677,7 @@ $("addGameBtn").addEventListener("click", function(){
   editGameId = id;
   refreshStorefront();
   renderGameEditor();
-  saveStoreToBackend();
-  toast("New game added — name it, set its packs, then Save.");
+  if(saveStoreToBackend()) toast("New game added — name it, set its packs, then Save.");
 });
 $("saveGameBtn").addEventListener("click", function(){
   if(!adminGuard()) return;
@@ -2727,8 +2724,7 @@ $("saveGameBtn").addEventListener("click", function(){
     if($("panel").classList.contains("open")){ closePanel(); openGame(g.id); }
   }
   renderGameEditor();
-  saveStoreToBackend();
-  toast("Saved — " + g.name + " is updated on the store.");
+  if(saveStoreToBackend()) toast("Saved — " + g.name + " is updated on the store.");
 });
 $("deleteGameBtn").addEventListener("click", function(){
   if(!adminGuard()) return;
@@ -2746,8 +2742,7 @@ $("deleteGameBtn").addEventListener("click", function(){
   editGameId = GAMES.length ? GAMES[0].id : "";
   refreshStorefront();
   renderGameEditor();
-  saveStoreToBackend();
-  toast(g ? g.name + " deleted." : "Game deleted.");
+  if(saveStoreToBackend()) toast(g ? g.name + " deleted." : "Game deleted.");
 });
 
 /* ---- FAQ editor ---- */
@@ -2778,8 +2773,7 @@ $("saveFaqBtn").addEventListener("click", function(){
   if(!out.length){ toast("Keep at least one complete question & answer."); return; }
   FAQS = out;
   renderFaq();
-  saveStoreToBackend();
-  toast("FAQs updated — " + out.length + " live on the store.");
+  if(saveStoreToBackend()) toast("FAQs updated — " + out.length + " live on the store.");
 });
 
 /* ---- Coupons editor ---- */
@@ -2879,8 +2873,7 @@ $("applySeoBtn").addEventListener("click", function(){
   seoState.title = $("seoTitle").value.trim();
   seoState.desc = $("seoDesc").value.trim();
   applyBrand(); /* re-renders brand + ticker, then applySeoToPage applies title/description */
-  saveStoreToBackend();
-  toast("SEO updated — title & description now live on the page.");
+  if(saveStoreToBackend()) toast("SEO updated — title & description now live on the page.");
 });
 
 /* ---- Orders view (backend) ---- */
@@ -3098,8 +3091,7 @@ $("bulkApply").addEventListener("click", function(){
   if(!count){ toast("No packs in that selection."); return; }
   refreshStorefront();
   if(cur && $("panel").classList.contains("open")){ var oid = cur.id; closePanel(); openGame(oid); }
-  saveStoreToBackend();
-  toast("Bulk change applied: " + (pct > 0 ? "+" : "") + pct + "% on " + count + " packs.");
+  if(saveStoreToBackend()) toast("Bulk change applied: " + (pct > 0 ? "+" : "") + pct + "% on " + count + " packs.");
 });
 
 applyBrand();
