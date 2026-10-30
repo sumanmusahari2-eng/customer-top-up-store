@@ -1389,7 +1389,7 @@ var FAQS = [
 ];
 
 /* ---------------- Seller state (built-in defaults — the admin's backend-saved settings replace these on load) ---------------- */
-var seller = { name:"TopUp Hub", wa:"919366077306", note:"Delivery within 5 minutes of payment confirmation" };
+var seller = { name:"MIRAC OFFICIAL", wa:"919366077306", note:"Delivery within 5 minutes of payment confirmation" };
 
 /* ---------------- Backend connection ----------------
    Live backend: accounts, orders, wallet, coupons, users, resellers,
@@ -1546,10 +1546,10 @@ var VARIANT_ART = {
    loop speed, saved with the store data. {STORE} in the text is replaced
    by the store name. Speeds are seconds per full loop — lower is faster. */
 var marqueeState = {
-  tickerItems: ["WELCOME TO {STORE}","INSTANT TOP-UPS","UPI \u00b7 PHONEPE \u00b7 GPAY \u00b7 PAYTM","MLBB \u00b7 INDIA \u00b7 GLOBAL \u00b7 INDONESIA \u00b7 PHILIPPINES \u00b7 SG/MY","DELIVERY IN MINUTES","ID-ONLY TOP-UP \u2014 NO PASSWORD NEEDED"],
-  tickerSecs: 26,
-  welcomeText: "WELCOME TO {STORE}",
-  welcomeSecs: 20
+  tickerItems: ["WELCOME TO {STORE} \u2022 India's Most Trusted site for MLBB Topups"],
+  tickerSecs: 14,
+  welcomeText: "CUSTOMER SUPPORT AVAILABLE FROM 10:30 AM TO 9:30 PM",
+  welcomeSecs: 11
 };
 function mqText(t){ return String(t == null ? "" : t).split("{STORE}").join(seller.name.toUpperCase()); }
 function clampSecs(v, fallback){
