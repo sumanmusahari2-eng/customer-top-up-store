@@ -573,7 +573,7 @@
         <form class="auth-form" id="authForm" novalidate>
           <label class="f" id="nameField" style="display:none"><span>Your name</span><input id="authName" type="text" autocomplete="name" maxlength="40" placeholder="e.g. Rahul Sharma" /></label>
           <label class="f"><span>Email address</span><input id="authEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></label>
-          <label class="f"><span>Password</span><input id="authPass" type="password" autocomplete="current-password" placeholder="At least 8 characters" /></label>
+          <label class="f"><span>Password</span><span style="position:relative;display:block"><input id="authPass" type="password" autocomplete="current-password" placeholder="At least 8 characters" style="padding-right:42px" /><button type="button" aria-label="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;cursor:pointer;font-size:16px;line-height:1;padding:4px" onclick="var i=this.previousElementSibling;i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈';this.setAttribute('aria-label',i.type==='password'?'Show password':'Hide password');">👁</button></span></label>
           <button class="buy" id="authSubmit" type="submit">Login</button>
         </form>
         <div class="auth-err" id="authErr" role="alert"></div>
