@@ -21,6 +21,14 @@
     --radius:14px;
     --shadow:0 6px 18px rgba(0,0,0,.35);
   }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#000000; --bg2:#050505; --card:#0a0a0a; --card2:#0d0d0d;
+      --line:rgba(255,255,255,.16);
+      --ink:#ffffff; --muted:#bcbcbc; --faint:#8a8a8a;
+      --shadow:0 6px 18px rgba(0,0,0,.35);
+    }
+  }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{margin:0;background:var(--bg);color:var(--ink);
@@ -296,6 +304,60 @@
   .ubadge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;letter-spacing:.02em;background:var(--card);color:var(--muted)}
   .ubadge.admin{background:var(--gold);border-color:transparent;color:#000}
   .ubadge.reseller{background:#14342a;border-color:rgba(53,224,138,.45);color:var(--accent)}
+  @media (prefers-color-scheme: light){.ubadge.reseller{background:#e3f7ec;color:#0d6e42}}
+  .user-actions{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .user-actions .ua-label{font-size:13px;font-weight:700}
+  .user-actions .ua-label small{display:block;color:var(--faint);font-weight:600;font-size:12px;margin-top:1px}
+
+  /* ---------- login / account ---------- */
+  .btn.login-btn{background:var(--gold);border:none;color:#000}
+  .btn .avatar-dot{width:22px;height:22px;border-radius:50%;background:#000;color:var(--brand);display:grid;place-items:center;font-size:11px;font-weight:900;flex:none;overflow:hidden}
+  .btn .avatar-dot img{width:100%;height:100%;object-fit:cover}
+  .auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:16px}
+  .auth-tabs button{border:none;background:transparent;color:var(--muted);border-radius:9px;padding:11px;font-weight:800;font-size:14px;min-height:44px}
+  .auth-tabs button.on{background:var(--gold);color:#000}
+  .gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:11px;background:#fff;color:#1f1f1f;border:1px solid #dadce0;border-radius:12px;padding:13px 14px;font-weight:700;font-size:15px;min-height:52px}
+  .gbtn:active{transform:scale(.99)}
+  .gbtn svg{width:20px;height:20px;flex:none}
+  #googleRealBtn{display:flex;justify-content:center;min-height:44px}
+  #googleRealBtn:empty{display:none}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--faint);font-size:12.5px;font-weight:700;margin:16px 0}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .auth-form{display:flex;flex-direction:column;gap:13px}
+  .auth-err{font-size:13px;color:var(--bad);min-height:18px;margin-top:10px}
+  .profile-card{display:flex;gap:14px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .profile-card .pava{width:54px;height:54px;border-radius:50%;background:var(--gold);color:#000;display:grid;place-items:center;font-size:21px;font-weight:900;flex:none;overflow:hidden}
+  .profile-card .pava img{width:100%;height:100%;object-fit:cover}
+  .profile-card .pname{font-weight:800;font-size:16.5px;line-height:1.3;word-break:break-word}
+  .profile-card .pemail{color:var(--muted);font-size:13.5px;word-break:break-all}
+  .provider-badge{display:inline-block;margin-top:5px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;color:var(--brand)}
+  .ghost-btn{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:14px;font-weight:800;font-size:15px;min-height:52px}
+  .danger-btn{width:100%;border:1px solid rgba(255,93,115,.5);background:transparent;color:var(--bad);border-radius:12px;padding:14px;font-weight:800;font-size:15px;min-height:52px}
+
+  /* ---------- phones ---------- */
+  @media (max-width:860px){
+    .bottomnav{display:block}
+    body{padding-bottom:0}
+    main{padding:0 12px 96px}
+    footer{margin:40px -12px -96px;padding-bottom:110px}
+    .head-actions .btn span.lbl{display:none}
+    .head-actions .btn{padding:9px 11px}
+    .logo-sub{display:none}
+    .logo-name{font-size:18px}
+    .banner{min-height:158px}
+    .pop-card{width:124px}
+    .deals{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 8px;margin:6px -2px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .deals::-webkit-scrollbar{display:none}
+    .deal{flex:0 0 84%;scroll-snap-align:start}
+    .grid{grid-template-columns:repeat(3,1fr);gap:16px 10px}
+    .game .gname{font-size:10.5px}
+    .game .gsub{font-size:9.5px}
+    .game .gstrip{font-size:9px;padding:4px 5px;margin-top:-10px}
+    .steps{grid-template-columns:1fr}
+    .packs{grid-template-columns:repeat(2,1fr)}
+    .fields{grid-template-columns:1fr}
+    .sec-head h2{font-size:18px}
+  }
   @media (min-width:861px){
     .banner{min-height:250px}
     .banner-in{padding:26px}
