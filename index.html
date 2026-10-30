@@ -2349,7 +2349,7 @@ function loadStoreData(){
   }).catch(function(){ /* backend unreachable — built-in catalogue stays */ });
 }
 function saveStoreToBackend(){
-  if(!isAdmin() || !apiToken) return;
+  if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return; }
   api("/api/admin/store", { method:"PUT", body:storeSnapshot() }).then(function(){
     toast("Saved to the backend — live for every visitor.");
   }).catch(function(err){ toast("Backend save failed: " + err.message); });
