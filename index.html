@@ -65,8 +65,7 @@
   /* ---------- banner (image hero, slider-style) ---------- */
   .banner{margin:14px 0 0;border-radius:12px;overflow:hidden;position:relative;background:#111;min-height:172px;display:flex;align-items:flex-end}
   .banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%}
-  .banner::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.88) 78%)}
-  .banner-in{position:relative;z-index:1;padding:18px;color:#fff;width:100%}
+  .banner-in{position:relative;z-index:1;padding:18px;color:#fff;width:100%;text-shadow:0 1px 10px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.6)}
   .banner h1{margin:0 0 5px;font-size:clamp(21px,5.4vw,34px);line-height:1.15;font-weight:800;max-width:520px}
   .banner h1 .hl{color:var(--brand)}
   .banner p{margin:0 0 12px;color:#e3e3e3;font-size:13.5px;line-height:1.5;max-width:480px}
@@ -1713,7 +1712,19 @@ $("searchInput").addEventListener("input", function(e){ curQ = e.target.value; r
 
 /* ---------------- FAQ ---------------- */
 function renderFaq(){
-  $("faq").innerHTML = FAQS.map(function(f){
+  /* The affiliation disclaimer is always shown with this exact wording:
+     if the saved FAQs already carry an affiliation question, its answer
+     is replaced with the disclaimer (so there is never a duplicate); if
+     they do not, the question is added at the end. */
+  var affQ = "Is this website affiliated?";
+  var affA = "This is an independent top-up store and is not affiliated with Moonton. All game names and artwork belong to their respective owners. Delivery is made to the ID you enter \u2014 please double-check it before ordering; top-ups sent to a wrong ID cannot be reversed.";
+  var list = FAQS.slice(), found = false;
+  list = list.map(function(f){
+    if(/affiliat/i.test(f.q || "")){ found = true; return { q: affQ, a: affA }; }
+    return f;
+  });
+  if(!found) list.push({ q: affQ, a: affA });
+  $("faq").innerHTML = list.map(function(f){
     return '<div class="qa"><button type="button">'+esc(f.q)+'<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9.5 12 15.5 18 9.5 16.6 8 12 12.6 7.4 8z"/></svg></button><div class="ans">'+esc(f.a)+'</div></div>';
   }).join("");
   Array.prototype.forEach.call(document.querySelectorAll(".qa > button"), function(b){
