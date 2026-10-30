@@ -2395,16 +2395,51 @@ function applyStoreData(d){
   renderFaq();
 }
 var storeLoadDone = false;
+/* ---- Last-saved store cache: on a repeat visit the saved store
+   (banner included) renders instantly from this browser's cache
+   instead of flashing the built-in defaults while the backend wakes
+   up. The backend refresh at boot still overwrites with fresh data
+   and refreshes the cache, so a stale cache only ever shows the
+   last saved store, never invented data. ---- */
+var STORE_CACHE_KEY = "topuphub_store_v1";
+function cacheStore(d){
+  if(!d || typeof d !== "object") return;
+  try{ localStorage.setItem(STORE_CACHE_KEY, JSON.stringify(d)); return; }catch(e){}
+  try{
+    var slim = JSON.parse(JSON.stringify(d));
+    if(Array.isArray(slim.games)) slim.games.forEach(function(g){ delete g.img; });
+    localStorage.setItem(STORE_CACHE_KEY, JSON.stringify(slim));
+  }catch(e2){}
+}
+function applyCachedStore(){
+  var raw = null;
+  try{ raw = localStorage.getItem(STORE_CACHE_KEY); }catch(e){ return; }
+  if(!raw) return;
+  try{
+    var d = JSON.parse(raw);
+    if(d && typeof d === "object") applyStoreData(d);
+  }catch(e){}
+}
+function cacheBannerNow(){
+  var raw = null;
+  try{ raw = localStorage.getItem(STORE_CACHE_KEY); }catch(e){}
+  var d = null;
+  try{ d = raw ? JSON.parse(raw) : null; }catch(e){ d = null; }
+  if(!d || typeof d !== "object") d = {};
+  d.banner = { img:bannerState.img, title:bannerState.title, hl:bannerState.hl, sub:bannerState.sub, cta:bannerState.cta };
+  cacheStore(d);
+}
 function loadStoreData(){
   return api("/api/store").then(function(d){
-    if(d && d.configured) applyStoreData(d);
-  }).catch(function(){ /* backend unreachable — built-in catalogue stays */ }).then(function(){ storeLoadDone = true; });
+    if(d && d.configured){ applyStoreData(d); cacheStore(d); }
+  }).catch(function(){ /* backend unreachable — cached or built-in store stays */ }).then(function(){ storeLoadDone = true; });
 }
 function saveStoreToBackend(done){
   if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return false; }
   if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return false; }
   toast("Saving… please do not refresh yet.");
   api("/api/admin/store", { method:"PUT", body:storeSnapshot() }).then(function(){
+    cacheStore(storeSnapshot());
     if(typeof done === "function"){ done(true); }
     else if(done){ toast(done); }
     else { toast("Saved to the backend — live for every visitor."); }
@@ -2423,6 +2458,7 @@ function saveBannerFast(msg){
   if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return; }
   toast("Saving banner…");
   api("/api/admin/banner", { method:"PUT", body:{ img:bannerState.img, title:bannerState.title, hl:bannerState.hl, sub:bannerState.sub, cta:bannerState.cta } }).then(function(){
+    cacheBannerNow();
     toast(msg || "Banner saved.");
   }).catch(function(err){ toast("Banner save failed: " + err.message); });
 }
@@ -3324,6 +3360,7 @@ function bootBackend(){
     }
   });
 }
+applyCachedStore();
 bootBackend();
 
 /* ---------------- Nav / misc ---------------- */
