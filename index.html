@@ -139,7 +139,7 @@
 
   /* ---------- trending deals ---------- */
   .deals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
-  .deal{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;position:relative;overflow:hidden;text-align:left;color:var(--ink);width:100%;box-shadow:var(--shadow)}
+  .deal{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;position:relative;overflow:hidden;text-align:left;color:var(--ink);width:100%;box-shadow:var(--shadow);text-decoration:none}.deal .deal-img{width:100%;height:120px;object-fit:cover;border-radius:10px;margin:0 0 10px;display:block}
   .deal .tag{position:absolute;top:0;right:0;background:linear-gradient(90deg,#ff7a00,var(--brand));color:#000;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:0 0 0 10px;letter-spacing:.04em}
   .deal h3{margin:0 22px 4px 0;font-size:15.5px}
   .deal p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
@@ -437,7 +437,7 @@
   <div class="sec-head" id="popularHead"><h2>🔥 Popular Games</h2><p>Swipe — tap to top up</p></div>
   <div class="pop-row" id="popRow"></div>
 
-  <div class="sec-head"><h2>Trending deals</h2></div>
+  <div class="sec-head" id="dealsHead"><h2>Trending deals</h2></div>
   <div class="deals" id="deals"></div>
 
   <div class="toolbar" id="gamesAnchor">
@@ -709,10 +709,10 @@
     <section class="asec" data-asec="highlights">
       <div class="stepbox">
         <h3>Trending deals (highlights)</h3>
-        <p class="hint">The three highlight cards under Popular Games. Each card links to a game and shows that game's first pack price. Games ticked “Trending” in the Games tab lead the Popular Games row.</p>
+        <p class="hint">The highlight cards under Popular Games. Each card can carry its own image, a link (opens instead of the game), and an on/off switch. The row auto-rotates every few seconds and pauses while you swipe it.</p>
         <div id="dealsEditor"></div>
         <div style="height:6px"></div>
-        <button class="buy" id="applyDeals" type="button">Apply highlights</button>
+        <button class="buy" id="applyDeals" type="button">Apply highlights</button><input type="file" id="dealFile" accept="image/*" hidden>
       </div>
     </section>
 
@@ -809,8 +809,23 @@
         <h3>Bulk prices</h3>
         <p class="hint">Raise or lower every pack price in one go — e.g. −10 during a sale, or +5 when costs go up. MRP moves by the same percentage so the discount shown stays honest. Prices round to the nearest rupee and never drop below ₹1.</p>
         <div class="setup-grid">
+          <label class="f"><span>Mode</span><select id="bulkMode"><option value="pct">Change %</option><option value="busan">Sync with Busan prices</option></select></label>
           <label class="f"><span>Apply to</span><select id="bulkScope"></select></label>
-          <label class="f"><span>Change % (use − for a discount, e.g. −10)</span><input id="bulkPct" type="number" step="1" min="-90" max="200" placeholder="e.g. -10" /></label>
+          <label class="f" id="bulkPctLabel"><span>Change % (use − for a discount, e.g. −10)</span><input id="bulkPct" type="number" step="1" min="-90" max="200" placeholder="e.g. -10" /></label>
+        </div>
+        <div id="bulkSyncFields" style="display:none">
+          <div class="setup-grid">
+            <label class="f"><span>Customer rate ₹ per $1</span><input id="bulkRate" type="number" step="0.01" min="0" value="103" /></label>
+            <label class="f"><span>Customer markup %</span><input id="bulkMarkup" type="number" step="1" min="0" value="20" /></label>
+            <label class="f"><span>Reseller rate ₹ per $1</span><input id="bulkResRate" type="number" step="0.01" min="0" value="103" /></label>
+            <label class="f"><span>Reseller markup %</span><input id="bulkResMarkup" type="number" step="1" min="0" value="20" /></label>
+          </div>
+          <p class="hint">Prices come from the live Busan catalogue (USD). Customer price = cost × rate × (1 + markup), rounded up. A pack's reseller price, when one is set, uses its own rate + markup and is never saved above the customer price. Packs with no Busan product linked, or missing from the catalogue, are skipped and never touched.</p>
+          <div id="bulkPacksField" style="display:none"><p class="hint" style="margin:0 0 6px">Tick the packs to sync — unticked packs are left completely unchanged.</p><div id="bulkPacksList"></div><div style="height:10px"></div></div>
+          <div id="bulkPreview"></div>
+          <div style="height:10px"></div>
+          <button class="sbtn" id="bulkPreviewBtn" type="button">Preview Busan sync</button>
+          <button class="buy" id="bulkSyncApply" type="button">Apply synced prices</button>
         </div>
         <div style="height:14px"></div>
         <button class="buy" id="bulkApply" type="button">Apply bulk price change</button>
@@ -1631,19 +1646,40 @@ renderPop();
 
 /* ---------------- Deals / highlights ---------------- */
 var DEALS = [
-  {g:"mobile-legends114", t:"Mobile Legends (86)", d:"Mobile Legends — India diamonds, credited to your User ID and Zone ID.", tag:"INDIA"},
-  {g:"mlbbglobal202", t:"Mobile Legends Global (5)", d:"Mobile Legends — Global diamonds for accounts outside the regional stores.", tag:"GLOBAL"},
-  {g:"sgmy-mlbb893", t:"SG/MY Mlbb (14)", d:"Mobile Legends — SG/MY diamonds, credited to your User ID and Zone ID.", tag:"SG/MY"}
+  {g:"mobile-legends114", t:"Mobile Legends (86)", d:"Mobile Legends — India diamonds, credited to your User ID and Zone ID.", tag:"INDIA", img:"", link:"", off:false},
+  {g:"mlbbglobal202", t:"Mobile Legends Global (5)", d:"Mobile Legends — Global diamonds for accounts outside the regional stores.", tag:"GLOBAL", img:"", link:"", off:false},
+  {g:"sgmy-mlbb893", t:"SG/MY Mlbb (14)", d:"Mobile Legends — SG/MY diamonds, credited to your User ID and Zone ID.", tag:"SG/MY", img:"", link:"", off:false}
 ];
+var dealTimer = null, dealIdx = 0;
 function renderDeals(){
-  $("deals").innerHTML = DEALS.map(function(x){
+  var vis = DEALS.filter(function(x){ return !x.off; });
+  var head = $("dealsHead"), box = $("deals");
+  if(dealTimer){ clearInterval(dealTimer); dealTimer = null; }
+  if(!vis.length){ if(head) head.style.display = "none"; box.style.display = "none"; return; }
+  if(head) head.style.display = ""; box.style.display = "";
+  box.innerHTML = vis.map(function(x){
     var g = GAMES.filter(function(y){ return y.id===x.g; })[0];
+    var pr = g && g.packs.length ? g.packs[0] : null;
+    var img = x.img ? '<img class="deal-img" src="'+x.img+'" alt="">' : "";
+    var body = img + '<span class="tag">'+esc(x.tag)+'</span><h3>'+esc(x.t)+'</h3><p>'+esc(x.d)+'</p>' + (pr ? '<div class="price">'+(pr.mrp?'<s>'+inr(pr.mrp)+'</s>':'')+inr(pr.pr)+'</div>' : "");
+    if(x.link){ return '<a class="deal" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+body+'</a>'; }
     if(!g || !g.packs.length) return "";
-    var p = g.packs[0];
-    return '<button class="deal" type="button" data-game="'+g.id+'"><span class="tag">'+esc(x.tag)+'</span><h3>'+esc(x.t)+'</h3><p>'+esc(x.d)+'</p><div class="price">'+(p.mrp?'<s>'+inr(p.mrp)+'</s>':'')+inr(p.pr)+'</div></button>';
+    return '<button class="deal" type="button" data-game="'+g.id+'">'+body+'</button>';
   }).join("");
-}
-renderDeals();
+  if(vis.length > 1 && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)){
+    dealIdx = 0;
+    var step = function(){
+      if(document.hidden) return;
+      var cards = box.children; if(!cards.length) return;
+      dealIdx = (dealIdx + 1) % cards.length;
+      box.scrollTo({ left: cards[dealIdx].offsetLeft - box.offsetLeft, behavior: "smooth" });
+    };
+    dealTimer = setInterval(step, 4000);
+    box.onmouseenter = function(){ if(dealTimer){ clearInterval(dealTimer); dealTimer = null; } };
+    box.onmouseleave = function(){ if(!dealTimer){ dealTimer = setInterval(step, 4000); } };
+    box.ontouchstart = box.onmouseenter; box.ontouchend = box.onmouseleave;
+  }
+} renderDeals();
 
 /* ---------------- Grid + filters ---------------- */
 var curCat="all", curQ="";
@@ -2353,12 +2389,18 @@ function loadStoreData(){
     if(d && d.configured) applyStoreData(d);
   }).catch(function(){ /* backend unreachable — built-in catalogue stays */ }).then(function(){ storeLoadDone = true; });
 }
-function saveStoreToBackend(){
+function saveStoreToBackend(done){
   if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return false; }
   if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return false; }
+  toast("Saving… please do not refresh yet.");
   api("/api/admin/store", { method:"PUT", body:storeSnapshot() }).then(function(){
-    toast("Saved to the backend — live for every visitor.");
-  }).catch(function(err){ toast("Backend save failed: " + err.message); });
+    if(typeof done === "function"){ done(true); }
+    else if(done){ toast(done); }
+    else { toast("Saved to the backend — live for every visitor."); }
+  }).catch(function(err){
+    if(typeof done === "function"){ done(false); }
+    toast("Backend save failed: " + err.message);
+  });
   return true;
 }
 
@@ -2472,7 +2514,7 @@ function openSetup(){
   $("seoName").value = seller.name;
   $("seoTitle").value = seoState.title || (seller.name + " — Game Top-Ups, Delivered Fast");
   $("seoDesc").value = seoState.desc || $("metaDesc").getAttribute("content");
-  $("bulkScope").innerHTML = '<option value="all">All games</option>' + CATS.filter(function(c){ return c.id!=="all"; }).map(function(c){ return '<option value="'+c.id+'">'+c.label+'</option>'; }).join("");
+  fillBulkScope();
   showAdminTab("store");
   $("setup").classList.add("open"); document.body.style.overflow="hidden";
   $("setup").scrollTop = 0;
@@ -2492,7 +2534,7 @@ $("applySetup").addEventListener("click", function(){
   else if($("setWa").value.trim()){ toast("WhatsApp number looks off — use country code + number, digits only."); return; }
   seller.note = $("setNote").value.trim() || seller.note;
   applyBrand();
-  if(saveStoreToBackend()){ closeSetup(); toast("Store settings updated."); }
+  saveStoreToBackend(function(ok){ if(ok){ closeSetup(); toast("Store settings updated."); } });
 });
 
 /* ---- Banner apply ---- */
@@ -2504,7 +2546,7 @@ $("applyBanner").addEventListener("click", function(){
   bannerState.sub = $("bnSub").value.trim();
   bannerState.cta = $("bnCta").value.trim();
   renderBanner();
-  if(saveStoreToBackend()) toast("Banner updated.");
+  saveStoreToBackend("Banner updated.");
 });
 
 /* ---- Moving banners (ticker + welcome marquee) apply ---- */
@@ -2525,7 +2567,7 @@ $("applyMarquee").addEventListener("click", function(){
   marqueeState.welcomeText = wt;
   marqueeState.welcomeSecs = clampSecs($("mqWelcomeSecs").value, marqueeState.welcomeSecs);
   renderTicker();
-  if(saveStoreToBackend()) toast("Moving banners updated.");
+  saveStoreToBackend("Moving banners updated.");
 });
 
 /* ---- Banner image upload ---- */
@@ -2537,10 +2579,10 @@ $("bnFile").addEventListener("change", function(){
     $("bnImg").innerHTML = imgOptionList(dataUrl);
     $("bnPreview").src = dataUrl;
     renderBanner();
-    if(saveStoreToBackend()) toast("Banner image uploaded and applied.");
+    saveStoreToBackend("Banner image uploaded and applied.");
   });
 });
-$("bnImg").addEventListener("change", function(){ $("bnPreview").src = this.value; });
+$("bnImg").addEventListener("change", function(){ bannerState.img = this.value; $("bnPreview").src = this.value; renderBanner(); });
 
 
 /* ---- Trust chips editor ---- */
@@ -2576,32 +2618,41 @@ $("applyTrust").addEventListener("click", function(){
     var el = document.querySelector('[data-trust-t="' + i + '"]');
     return { t: el ? el.value.trim() || c.t : c.t, icon: c.icon || "", img: c.img || "" };
   });
-  renderTrust(); renderTrustEditor(); if(saveStoreToBackend()) toast("Trust chips updated.");
+  renderTrust(); renderTrustEditor(); saveStoreToBackend("Trust chips updated.");
 });
 /* ---- Highlights (trending deals) editor ---- */
-function renderDealsEditor(){
-  $("dealsEditor").innerHTML = DEALS.map(function(x,i){
-    var opts = GAMES.map(function(g){ return '<option value="'+g.id+'"'+(g.id===x.g?" selected":"")+'>'+esc(g.name)+'</option>'; }).join("");
-    return '<div class="arow"><div class="arow-head"><b>Highlight '+(i+1)+'</b></div><div class="setup-grid">'
-      + '<label class="f"><span>Game this card opens</span><select data-deal-game="'+i+'">'+opts+'</select></label>'
-      + '<label class="f"><span>Card title</span><input type="text" maxlength="48" data-deal-t="'+i+'" value="'+esc(x.t)+'"></label>'
-      + '<label class="f"><span>Badge (top-right)</span><input type="text" maxlength="16" data-deal-tag="'+i+'" value="'+esc(x.tag)+'"></label>'
-      + '<label class="f"><span>Description</span><textarea maxlength="140" data-deal-d="'+i+'">'+esc(x.d)+'</textarea></label>'
-      + '</div></div>';
-  }).join("");
-}
-$("applyDeals").addEventListener("click", function(){
+function renderDealsEditor(){   $("dealsEditor").innerHTML = DEALS.map(function(x,i){     var opts = GAMES.map(function(g){ return '<option value="'+g.id+'"'+(g.id===x.g?" selected":"")+'>'+esc(g.name)+'</option>'; }).join("");     return '<div class="arow"><div class="arow-head"><b>Highlight '+(i+1)+'</b><label style="margin-left:auto;display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-deal-on="'+i+'"'+(x.off?"":" checked")+'> Show</label></div><div class="setup-grid">'       + '<label class="f"><span>Game this card opens</span><select data-deal-game="'+i+'">'+opts+'</select></label>'       + '<label class="f"><span>Card title</span><input type="text" maxlength="48" data-deal-t="'+i+'" value="'+esc(x.t)+'"></label>'       + '<label class="f"><span>Badge (top-right)</span><input type="text" maxlength="16" data-deal-tag="'+i+'" value="'+esc(x.tag)+'"></label>'       + '<label class="f"><span>Description</span><textarea maxlength="140" data-deal-d="'+i+'">'+esc(x.d)+'</textarea></label>'       + '<label class="f"><span>Link (optional — opens instead of the game)</span><input type="text" inputmode="url" data-deal-link="'+i+'" value="'+esc(x.link||"")+'" placeholder="https://…"></label>'       + '</div><div style="display:flex;gap:8px;align-items:center;margin-top:8px">'       + (x.img ? '<img src="'+x.img+'" alt="" style="width:72px;height:48px;object-fit:cover;border-radius:8px">' : '')       + '<button class="sbtn" type="button" data-deal-img="'+i+'">Upload image</button>'       + (x.img ? '<button class="sbtn" type="button" data-deal-img-rm="'+i+'">Remove image</button>' : '')       + '</div></div>';   }).join(""); } $("applyDeals").addEventListener("click", function(){
   if(!adminGuard()) return;
   DEALS = DEALS.map(function(x,i){
+    var link = (document.querySelector('[data-deal-link="'+i+'"]').value || "").trim();
+    if(link && link.indexOf("http://") !== 0 && link.indexOf("https://") !== 0) link = "https://" + link;
     return {
       g: document.querySelector('[data-deal-game="'+i+'"]').value,
       t: document.querySelector('[data-deal-t="'+i+'"]').value.trim() || x.t,
       tag: document.querySelector('[data-deal-tag="'+i+'"]').value.trim(),
-      d: document.querySelector('[data-deal-d="'+i+'"]').value.trim() || x.d
+      d: document.querySelector('[data-deal-d="'+i+'"]').value.trim() || x.d,
+      link: link,
+      off: !document.querySelector('[data-deal-on="'+i+'"]').checked,
+      img: x.img || ""
     };
   });
   renderDeals();
-  if(saveStoreToBackend()) toast("Highlights updated.");
+  saveStoreToBackend("Highlights updated.");
+});
+var pendingDealImg = -1;
+document.addEventListener("click", function(e){
+  var up = e.target.closest("[data-deal-img]");
+  if(up){ pendingDealImg = parseInt(up.getAttribute("data-deal-img"), 10); $("dealFile").click(); return; }
+  var rm = e.target.closest("[data-deal-img-rm]");
+  if(rm){ var ri = parseInt(rm.getAttribute("data-deal-img-rm"), 10); DEALS[ri].img = ""; renderDealsEditor(); renderDeals(); saveStoreToBackend("Highlight image removed."); }
+});
+$("dealFile").addEventListener("change", function(){
+  var file = this.files && this.files[0]; this.value = "";
+  var idx = pendingDealImg; pendingDealImg = -1; if(idx < 0) return;
+  processImageFile(file, 900, function(dataUrl){
+    DEALS[idx].img = dataUrl; renderDealsEditor(); renderDeals();
+    saveStoreToBackend("Highlight image uploaded.");
+  });
 });
 
 /* ---- Games & packs editor ---- */
@@ -2660,7 +2711,7 @@ function renderGameEditor(){
       g.img = dataUrl;
       refreshStorefront();
       renderGameEditor();
-      if(saveStoreToBackend()) toast("Cover image uploaded and applied to " + g.name + ".");
+      saveStoreToBackend("Cover image uploaded and applied to " + g.name + ".");
     });
   });
 }
@@ -2677,7 +2728,7 @@ $("addGameBtn").addEventListener("click", function(){
   editGameId = id;
   refreshStorefront();
   renderGameEditor();
-  if(saveStoreToBackend()) toast("New game added — name it, set its packs, then Save.");
+  saveStoreToBackend("New game added — name it, set its packs, then Save.");
 });
 $("saveGameBtn").addEventListener("click", function(){
   if(!adminGuard()) return;
@@ -2724,7 +2775,7 @@ $("saveGameBtn").addEventListener("click", function(){
     if($("panel").classList.contains("open")){ closePanel(); openGame(g.id); }
   }
   renderGameEditor();
-  if(saveStoreToBackend()) toast("Saved — " + g.name + " is updated on the store.");
+  saveStoreToBackend("Saved — " + g.name + " is updated on the store.");
 });
 $("deleteGameBtn").addEventListener("click", function(){
   if(!adminGuard()) return;
@@ -2742,7 +2793,7 @@ $("deleteGameBtn").addEventListener("click", function(){
   editGameId = GAMES.length ? GAMES[0].id : "";
   refreshStorefront();
   renderGameEditor();
-  if(saveStoreToBackend()) toast(g ? g.name + " deleted." : "Game deleted.");
+  saveStoreToBackend(g ? g.name + " deleted." : "Game deleted.");
 });
 
 /* ---- FAQ editor ---- */
@@ -2773,7 +2824,7 @@ $("saveFaqBtn").addEventListener("click", function(){
   if(!out.length){ toast("Keep at least one complete question & answer."); return; }
   FAQS = out;
   renderFaq();
-  if(saveStoreToBackend()) toast("FAQs updated — " + out.length + " live on the store.");
+  saveStoreToBackend("FAQs updated — " + out.length + " live on the store.");
 });
 
 /* ---- Coupons editor ---- */
@@ -2873,7 +2924,7 @@ $("applySeoBtn").addEventListener("click", function(){
   seoState.title = $("seoTitle").value.trim();
   seoState.desc = $("seoDesc").value.trim();
   applyBrand(); /* re-renders brand + ticker, then applySeoToPage applies title/description */
-  if(saveStoreToBackend()) toast("SEO updated — title & description now live on the page.");
+  saveStoreToBackend("SEO updated — title & description now live on the page.");
 });
 
 /* ---- Orders view (backend) ---- */
@@ -3091,8 +3142,113 @@ $("bulkApply").addEventListener("click", function(){
   if(!count){ toast("No packs in that selection."); return; }
   refreshStorefront();
   if(cur && $("panel").classList.contains("open")){ var oid = cur.id; closePanel(); openGame(oid); }
-  if(saveStoreToBackend()) toast("Bulk change applied: " + (pct > 0 ? "+" : "") + pct + "% on " + count + " packs.");
+  saveStoreToBackend("Bulk change applied: " + (pct > 0 ? "+" : "") + pct + "% on " + count + " packs.");
 });
+/* ---- Bulk sync with Busan (same idea as Avardo Copy 2: paste a rate + markup, preview first) ---- */
+var bulkSyncPlan = null, bulkSyncSel = {};
+function bulkBusanMode(){ return $("bulkMode") && $("bulkMode").value === "busan"; }
+function fillBulkScope(){
+  var sel = $("bulkScope"); if(!sel) return;
+  if(bulkBusanMode()){
+    sel.innerHTML = '<option value="all">All games</option>' + GAMES.map(function(g){ return '<option value="'+g.id+'">'+esc(g.name)+'</option>'; }).join("");
+  } else {
+    sel.innerHTML = '<option value="all">All games</option>' + CATS.filter(function(c){ return c.id!=="all"; }).map(function(c){ return '<option value="'+c.id+'">'+c.label+'</option>'; }).join("");
+  }
+}
+function bulkSyncDiscard(){ bulkSyncPlan = null; $("bulkPreview").innerHTML = ""; }
+function renderBulkSyncPacks(){
+  var field = $("bulkPacksField"), list = $("bulkPacksList"), scope = $("bulkScope").value;
+  if(!bulkBusanMode() || scope === "all"){ field.style.display = "none"; return; }
+  var g = GAMES.filter(function(x){ return x.id === scope; })[0];
+  if(!g){ field.style.display = "none"; return; }
+  if(bulkSyncSel.game !== scope){ bulkSyncSel = { game: scope }; g.packs.forEach(function(p, pi){ bulkSyncSel[pi] = true; }); }
+  field.style.display = "";
+  list.innerHTML = g.packs.map(function(p, pi){
+    return '<label style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-sync-pack="'+pi+'"'+(bulkSyncSel[pi]?" checked":"")+'> '+esc(p.amt)+' — ₹'+p.pr+'</label>';
+  }).join("");
+  list.querySelectorAll("[data-sync-pack]").forEach(function(cb){
+    cb.addEventListener("change", function(){ bulkSyncSel[parseInt(cb.getAttribute("data-sync-pack"), 10)] = cb.checked; bulkSyncDiscard(); });
+  });
+}
+$("bulkMode").addEventListener("change", function(){
+  var busan = bulkBusanMode();
+  $("bulkSyncFields").style.display = busan ? "" : "none";
+  $("bulkPctLabel").style.display = busan ? "none" : "";
+  $("bulkApply").style.display = busan ? "none" : "";
+  fillBulkScope(); renderBulkSyncPacks(); bulkSyncDiscard();
+});
+$("bulkScope").addEventListener("change", function(){ renderBulkSyncPacks(); bulkSyncDiscard(); });
+["bulkRate","bulkMarkup","bulkResRate","bulkResMarkup"].forEach(function(id){
+  $(id).addEventListener("input", bulkSyncDiscard);
+});
+function bulkSyncUsd(v){ if(v === undefined || v === null) return NaN; return Number(String(v).replace(/[^0-9.\-]/g, "")); }
+$("bulkPreviewBtn").addEventListener("click", function(){
+  if(!adminGuard()) return;
+  var rate = parseFloat($("bulkRate").value), mk = parseFloat($("bulkMarkup").value);
+  var rrate = parseFloat($("bulkResRate").value), rmk = parseFloat($("bulkResMarkup").value);
+  if(!(rate > 0) || isNaN(mk) || mk < 0){ toast("Customer rate and markup must be numbers above zero — check the Customer rate/markup fields."); return; }
+  if(!(rrate > 0) || isNaN(rmk) || rmk < 0){ toast("Reseller rate and markup must be numbers above zero — check the Reseller rate/markup fields."); return; }
+  var scope = $("bulkScope").value;
+  var targets = [];
+  GAMES.forEach(function(g, gi){
+    if(scope !== "all" && g.id !== scope) return;
+    g.packs.forEach(function(p, pi){
+      if(scope !== "all" && !bulkSyncSel[pi]) return;
+      targets.push({ gi: gi, pi: pi, g: g, p: p });
+    });
+  });
+  if(!targets.length){ toast(scope === "all" ? "No packs found." : "Select at least one pack."); return; }
+  $("bulkPreview").innerHTML = '<p class="hint">Loading the live Busan catalogue…</p>';
+  api("/api/admin/busan/products").then(function(d){
+    var cat = {};
+    (d.products || []).forEach(function(pr){ if(pr.productId) cat[String(pr.productId)] = pr; });
+    var rows = [], skipped = [];
+    targets.forEach(function(t){
+      var pid = t.p.busanProductId ? String(t.p.busanProductId) : "";
+      if(!pid){ skipped.push({ game: t.g.name, pack: t.p.amt, reason: "no Busan product linked" }); return; }
+      var pr = cat[pid];
+      if(!pr){ skipped.push({ game: t.g.name, pack: t.p.amt, reason: "not in the Busan catalogue" }); return; }
+      var usd = bulkSyncUsd(pr.price);
+      if(isNaN(usd)){ skipped.push({ game: t.g.name, pack: t.p.amt, reason: "bad Busan price" }); return; }
+      var cust = Math.ceil(usd * rate * (1 + mk / 100));
+      var res = null, capped = false;
+      if(t.p.resellerPrice !== undefined && t.p.resellerPrice !== null && t.p.resellerPrice !== ""){
+        res = Math.ceil(usd * rrate * (1 + rmk / 100));
+        if(res > cust){ res = cust; capped = true; }
+      }
+      rows.push({ gi: t.gi, pi: t.pi, game: t.g.name, pack: t.p.amt, usd: usd, cust: cust, res: res, capped: capped, oldPr: t.p.pr });
+    });
+    bulkSyncPlan = { rows: rows, skipped: skipped };
+    var html = '<p class="hint">' + rows.length + ' pack(s) will change' + (skipped.length ? ', ' + skipped.length + ' skipped.' : '.') + ' Nothing is saved until you tap Apply synced prices.</p>';
+    html += rows.map(function(r){
+      return '<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)">' + esc(r.game) + ' — ' + esc(r.pack) + ': $' + r.usd + ' → ₹' + r.cust + ' (was ₹' + r.oldPr + ')' + (r.res !== null ? ' · reseller ₹' + r.res + (r.capped ? ' (capped at customer price)' : '') : '') + '</div>';
+    }).join("");
+    if(skipped.length){
+      html += '<p class="hint" style="margin-top:10px">Skipped (left unchanged):</p>' + skipped.map(function(x){
+        return '<div style="font-size:13px;padding:3px 0">' + esc(x.game) + ' — ' + esc(x.pack) + ' (' + esc(x.reason) + ')</div>';
+      }).join("");
+    }
+    $("bulkPreview").innerHTML = html;
+  }).catch(function(err){
+    $("bulkPreview").innerHTML = "";
+    toast(err && err.message ? err.message : "Could not load the Busan catalogue. If Busan is not connected yet, add the Busan API key to the backend first.");
+  });
+});
+$("bulkSyncApply").addEventListener("click", function(){
+  if(!adminGuard()) return;
+  if(!bulkSyncPlan || !bulkSyncPlan.rows.length){ toast("Preview the Busan sync first, then Apply."); return; }
+  var count = 0;
+  bulkSyncPlan.rows.forEach(function(r){
+    var p = GAMES[r.gi].packs[r.pi];
+    p.pr = r.cust;
+    if(r.res !== null) p.resellerPrice = r.res;
+    count++;
+  });
+  refreshStorefront();
+  saveStoreToBackend("Busan prices synced on " + count + " pack(s).");
+  bulkSyncDiscard();
+});
+
 
 applyBrand();
 
