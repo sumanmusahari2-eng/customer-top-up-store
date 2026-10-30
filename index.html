@@ -1379,12 +1379,16 @@ var seller = { name:"TopUp Hub", wa:"919366077306", note:"Delivery within 5 minu
 /* ---------------- Backend connection ----------------
    Live backend: accounts, orders, wallet, coupons, users, resellers,
    leaderboard and the saved store catalogue all come from here.
-   The session token is kept in memory only — nothing is stored in the
-   browser, so a fresh page load starts signed out unless the backend
-   Google flow has just redirected back with #token= in the URL. */
+   The session token is saved in the browser (localStorage) so a refresh
+   keeps you signed in — including admin — until you tap Logout or the
+   30-day token expires. Sign-out clears it. */
 var API = "https://customer-top-up-backend.onrender.com";
 var apiToken = null;
 var pendingPaymentReturn = null;
+function saveToken(t, prov){ try{ localStorage.setItem("topuphub_token", t); localStorage.setItem("topuphub_provider", prov || ""); }catch(e){} }
+function clearToken(){ try{ localStorage.removeItem("topuphub_token"); localStorage.removeItem("topuphub_provider"); }catch(e){} }
+function storedToken(){ try{ return localStorage.getItem("topuphub_token") || ""; }catch(e){ return ""; } }
+function storedProvider(){ try{ return localStorage.getItem("topuphub_provider") || "Google"; }catch(e){ return "Google"; } }
 function api(path, opts){
   opts = opts || {};
   var headers = { "Content-Type": "application/json" };
@@ -2186,7 +2190,7 @@ $("authForm").addEventListener("submit", function(e){
   var path = authMode==="signup" ? "/api/auth/register" : "/api/auth/login";
   var body = authMode==="signup" ? { name:name, email:email, password:pass } : { email:email, password:pass };
   api(path, { method:"POST", body:body }).then(function(d){
-    apiToken = d.token;
+    apiToken = d.token; saveToken(d.token, "Email");
     var u = backendUser(d.user, "Email");
     setUser(u);
     toast(authMode==="signup" ? "Account created — you're signed in." : (u.isAdmin ? "Signed in as admin — the admin panel is unlocked." : "Welcome back, " + u.name.split(" ")[0] + "!"));
@@ -2198,7 +2202,7 @@ $("authForm").addEventListener("submit", function(e){
   });
 });
 function signOut(){
-  apiToken = null;
+  apiToken = null; clearToken();
   appliedCoupon = null;
   walletState = { balance:null, ledger:[] };
   setUser(null);
@@ -3117,8 +3121,18 @@ function bootBackend(){
     try{ window.history.replaceState(null, "", window.location.pathname); }catch(e){}
   }
   var chain = Promise.resolve();
+  if(!tokenMatch){
+    var saved = storedToken();
+    if(saved){
+      apiToken = saved;
+      chain = api("/api/auth/me").then(function(d){
+        if(d && d.user){ setUser(backendUser(d.user, storedProvider())); }
+        else { apiToken = null; clearToken(); }
+      }).catch(function(){ apiToken = null; clearToken(); });
+    }
+  }
   if(tokenMatch){
-    apiToken = decodeURIComponent(tokenMatch[1]);
+    apiToken = decodeURIComponent(tokenMatch[1]); saveToken(apiToken, "Google");
     chain = api("/api/auth/me").then(function(d){
       if(d && d.user){
         setUser(backendUser(d.user, "Google"));
