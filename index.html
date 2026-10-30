@@ -2347,13 +2347,15 @@ function applyStoreData(d){
   renderBanner();
   renderFaq();
 }
+var storeLoadDone = false;
 function loadStoreData(){
   return api("/api/store").then(function(d){
     if(d && d.configured) applyStoreData(d);
-  }).catch(function(){ /* backend unreachable — built-in catalogue stays */ });
+  }).catch(function(){ /* backend unreachable — built-in catalogue stays */ }).then(function(){ storeLoadDone = true; });
 }
 function saveStoreToBackend(){
   if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return; }
+  if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return; }
   api("/api/admin/store", { method:"PUT", body:storeSnapshot() }).then(function(){
     toast("Saved to the backend — live for every visitor.");
   }).catch(function(err){ toast("Backend save failed: " + err.message); });
@@ -2514,10 +2516,10 @@ $("mqWelcomeSecs").addEventListener("input", function(){ $("mqWelcomePreset").va
 $("applyMarquee").addEventListener("click", function(){
   if(!adminGuard()) return;
   var lines = $("mqTickerText").value.split("\n").map(function(t){ return t.trim(); }).filter(function(t){ return t; });
-  if(lines.length) marqueeState.tickerItems = lines;
+  marqueeState.tickerItems = lines;
   marqueeState.tickerSecs = clampSecs($("mqTickerSecs").value, marqueeState.tickerSecs);
   var wt = $("mqWelcomeText").value.trim();
-  if(wt) marqueeState.welcomeText = wt;
+  marqueeState.welcomeText = wt;
   marqueeState.welcomeSecs = clampSecs($("mqWelcomeSecs").value, marqueeState.welcomeSecs);
   renderTicker();
   saveStoreToBackend();
