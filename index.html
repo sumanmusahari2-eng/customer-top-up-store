@@ -71,6 +71,10 @@
   .banner p{margin:0 0 12px;color:#e3e3e3;font-size:13.5px;line-height:1.5;max-width:480px}
   .banner .cta{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#000;border:none;border-radius:10px;padding:11px 18px;font-weight:800;font-size:14.5px;min-height:44px}
   .banner .cta:active{transform:scale(.97)}
+.hero-track{position:absolute;inset:0;display:flex;transition:transform .5s ease;z-index:0}
+.hero-track img{position:static;flex:0 0 100%;width:100%;height:100%;object-fit:cover;object-position:center 22%}
+.hero-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:18px;line-height:1;cursor:pointer;padding:0}
+.hero-arrow.prev{left:10px}.hero-arrow.next{right:10px}
 .banner img.hero-slide{opacity:0;transition:opacity .7s ease}
 .banner img.hero-slide.on{opacity:1}
 .hero-dots{position:absolute;top:10px;right:12px;z-index:2;display:flex;gap:6px}
@@ -413,6 +417,8 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16.5 4.5 9 6 7.5 12 13.5 18 7.5 19.5 9z"/></svg>
       </button>
     </div>
+  <button id="heroPrev" class="hero-arrow prev" type="button" aria-label="Previous banner">&#8249;</button>
+  <button id="heroNext" class="hero-arrow next" type="button" aria-label="Next banner">&#8250;</button>
   <div id="heroDots" class="hero-dots"></div>
   </section>
 
@@ -682,6 +688,7 @@
           <label class="f"><span>Headline (first part)</span><input id="bnTitle" type="text" maxlength="60" /></label>
           <label class="f"><span>Headline (highlighted part, shown in yellow)</span><input id="bnHl" type="text" maxlength="40" /></label>
           <label class="f"><span>Sub-text</span><textarea id="bnSub" maxlength="220"></textarea></label>
+          <label class="f"><span>Slide timing — seconds between banner pictures</span><input id="bnSlideSecs" type="number" min="2" max="60" step="1" inputmode="numeric" /></label>
           <label class="f" style="display:none"><span>Button text</span><input id="bnCta" type="text" maxlength="24" /></label>
         </div>
         <div style="height:14px"></div>
@@ -1504,7 +1511,8 @@ var bannerState = {
   title:"Top up your game in",
   hl:"under 5 minutes.",
   sub:"Mobile Legends diamonds for India, Global, Brazil, Indonesia, Philippines, SG/MY and more regions — straight to your User ID. No game login, no game password shared, ever.",
-  cta:"Browse games"
+  cta:"Browse games",
+  slideSecs:4
 };
 var seoState = { title:"", desc:"" };
 var COUPONS = []; /* {code, type:"pct"|"flat", val} — created in the admin panel */
@@ -2368,6 +2376,7 @@ function applyStoreData(d){
     if(d.seller.note) seller.note = String(d.seller.note);
   }
   if(d.banner){ ["img","title","hl","sub","cta"].forEach(function(k){ if(typeof d.banner[k] === "string") bannerState[k] = d.banner[k]; }); }
+  if (d.banner && typeof d.banner.slideSecs === "number" && isFinite(d.banner.slideSecs)) bannerState.slideSecs = Math.min(60, Math.max(2, d.banner.slideSecs));
   if(d.seo){
     if(typeof d.seo.title === "string") seoState.title = d.seo.title;
     if(typeof d.seo.desc === "string") seoState.desc = d.seo.desc;
@@ -2464,7 +2473,7 @@ function saveBannerFast(msg){
   if(!isAdmin() || !apiToken){ toast("Not saved — sign in again as admin, then tap Apply once more."); return; }
   if(!storeLoadDone){ toast("Store data is still loading — wait a few seconds, then tap Apply again."); return; }
   toast("Saving banner…");
-  api("/api/admin/banner", { method:"PUT", body:{ img:bannerState.img, title:bannerState.title, hl:bannerState.hl, sub:bannerState.sub, cta:bannerState.cta } }).then(function(){
+  api("/api/admin/banner", { method:"PUT", body:{ img:bannerState.img, title:bannerState.title, hl:bannerState.hl, sub:bannerState.sub, cta:bannerState.cta, slideSecs:bannerState.slideSecs } }).then(function(){
     cacheBannerNow();
     toast(msg || "Banner saved.");
   }).catch(function(err){ toast("Banner save failed: " + err.message); });
@@ -2515,22 +2524,27 @@ function heroSlideList(){
 function heroShowSlide(i){
   var list = heroSlideList(); if (!list.length) return;
   heroSlideIdx = ((i % list.length) + list.length) % list.length;
-  var slides = document.querySelectorAll("img.hero-slide");
-  for (var k = 0; k < slides.length; k++) slides[k].classList.toggle("on", k === heroSlideIdx - 1);
+  var sec = document.querySelector("section.banner"); if (!sec) return;
+  var track = sec.querySelector(".hero-track"); if (track) track.style.transform = "translateX(-" + (heroSlideIdx * 100) + "%)";
   var dots = document.querySelectorAll("#heroDots button");
   for (var d = 0; d < dots.length; d++) dots[d].classList.toggle("on", d === heroSlideIdx);
+  var prev = $("heroPrev"), next = $("heroNext");
+  if (prev) prev.style.display = list.length > 1 ? "" : "none";
+  if (next) next.style.display = list.length > 1 ? "" : "none";
 }
 function heroStopAuto(){ if (heroSlideTimer) { clearInterval(heroSlideTimer); heroSlideTimer = null; } }
 function heroStartAuto(){
   heroStopAuto();
   if (heroSlideList().length > 1 && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
-    heroSlideTimer = setInterval(function(){ if (!document.hidden) heroShowSlide(heroSlideIdx + 1); }, 4000);
+    heroSlideTimer = setInterval(function(){ if (!document.hidden) heroShowSlide(heroSlideIdx + 1); }, Math.round((bannerState.slideSecs || 4) * 1000));
   }
 }
 function bindHeroSlider(){
   var sec = document.querySelector("section.banner"); if (!sec || sec.dataset.heroBound) return; sec.dataset.heroBound = "1";
   var dots = $("heroDots");
   if (dots) dots.addEventListener("click", function(e){ var b = e.target.closest("button"); if (!b) return; heroShowSlide(parseInt(b.getAttribute("data-i"), 10)); heroStartAuto(); });
+  var pv = $("heroPrev"); if (pv) pv.addEventListener("click", function(){ heroShowSlide(heroSlideIdx - 1); heroStartAuto(); });
+  var nx = $("heroNext"); if (nx) nx.addEventListener("click", function(){ heroShowSlide(heroSlideIdx + 1); heroStartAuto(); });
   sec.addEventListener("mouseenter", heroStopAuto);
   sec.addEventListener("mouseleave", heroStartAuto);
   var sx = null;
@@ -2540,13 +2554,11 @@ function bindHeroSlider(){
 function renderHeroSlides(){
   var sec = document.querySelector("section.banner"); if (!sec) return;
   var list = heroSlideList();
-  Array.prototype.forEach.call(sec.querySelectorAll("img.hero-slide"), function(el){ el.remove(); });
-  var hero = $("bannerImg"); if (!hero) return;
-  list.slice(1).forEach(function(src){
-    var im = document.createElement("img"); im.className = "hero-slide"; im.src = src; im.alt = "";
-    sec.insertBefore(im, hero.nextSibling);
-  });
+  var old = sec.querySelector(".hero-track"); if (old) old.remove();
+  var track = document.createElement("div"); track.className = "hero-track";
+  list.forEach(function(src){ var im = document.createElement("img"); im.src = src; im.alt = ""; track.appendChild(im); });
   var dots = $("heroDots");
+  sec.insertBefore(track, dots ? dots : null);
   if (dots) {
     dots.innerHTML = list.map(function(x, di){ return '<button type="button" aria-label="Go to banner ' + (di + 1) + '" data-i="' + di + '"></button>'; }).join("");
     dots.style.display = list.length > 1 ? "" : "none";
@@ -2621,6 +2633,7 @@ function openSetup(){
   $("bnHl").value = bannerState.hl;
   $("bnSub").value = bannerState.sub;
   $("bnCta").value = bannerState.cta;
+  $("bnSlideSecs").value = bannerState.slideSecs;
   $("mqTickerText").value = marqueeState.tickerItems.join("\n");
   $("mqTickerSecs").value = marqueeState.tickerSecs;
   $("mqTickerPreset").value = mqPresetName(marqueeState.tickerSecs, "ticker");
@@ -2662,6 +2675,7 @@ $("applyBanner").addEventListener("click", function(){
   bannerState.hl = $("bnHl").value.trim();
   bannerState.sub = $("bnSub").value.trim();
   bannerState.cta = $("bnCta").value.trim();
+  bannerState.slideSecs = (function(){ var v = parseFloat($("bnSlideSecs").value); return isFinite(v) ? Math.min(60, Math.max(2, v)) : 4; })();
   renderBanner();
   saveBannerFast("Banner saved.");
 });
