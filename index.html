@@ -677,7 +677,7 @@
           <label class="f"><span>Headline (first part)</span><input id="bnTitle" type="text" maxlength="60" /></label>
           <label class="f"><span>Headline (highlighted part, shown in yellow)</span><input id="bnHl" type="text" maxlength="40" /></label>
           <label class="f"><span>Sub-text</span><textarea id="bnSub" maxlength="220"></textarea></label>
-          <label class="f"><span>Button text</span><input id="bnCta" type="text" maxlength="24" /></label>
+          <label class="f" style="display:none"><span>Button text</span><input id="bnCta" type="text" maxlength="24" /></label>
         </div>
         <div style="height:14px"></div>
         <button class="buy" id="applyBanner" type="button">Apply banner</button>
@@ -2399,6 +2399,7 @@ function imgOptionList(current){
 function renderBanner(){
   var img = $("bannerImg");
   img.src = bannerState.img;
+  var cb = $("bannerCta"); if(cb) cb.style.display = "none"; /* banner CTA button removed at owner's order */
   $("bannerTitle").textContent = bannerState.title;
   $("bannerHl").textContent = bannerState.hl;
   $("bannerSub").textContent = bannerState.sub;
